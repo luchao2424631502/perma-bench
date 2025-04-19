@@ -138,8 +138,11 @@ char* Benchmark::create_pmem_data_file(const BenchmarkConfig& config, const Memo
     return create_dram_data(config, config.memory_range);
   }
 
+  spdlog::info( "[emerald add]\n" );
+
   if (std::filesystem::exists(memory_region.pmem_file)) {
     // Data was already generated. Only re-map it.
+    spdlog::info("[emerald {} exists]", memory_region.pmem_file.c_str() );
     return utils::map_pmem(memory_region.pmem_file, config.memory_range);
   }
 

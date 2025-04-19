@@ -8,3 +8,4 @@ viz/html/*.html
 output/
 test.yaml
 intel-*/
+build/

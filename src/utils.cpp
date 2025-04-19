@@ -23,16 +23,15 @@ char* map_pmem(const std::filesystem::path& file, size_t expected_length) {
     return nullptr;
   }
 
-  const mode_t mode = 0644;
-  int32_t fd = open(file.c_str(), O_RDWR | O_DIRECT, mode);
-  if (fd == -1) {
-    throw std::runtime_error{"Could not open file: " + file.string()};
+  int32_t dax_fd = open("/dev/dax1.0", O_RDWR);
+  if (dax_fd == -1) {
+    throw std::runtime_error{"!!! DAX DEVICE Could not open file: "};
   }
 
-  void* addr = mmap(nullptr, expected_length, PROT_READ | PROT_WRITE, PMEM_MAP_FLAGS, fd, 0);
-  close(fd);
+  void* addr = mmap(nullptr, expected_length, PROT_READ | PROT_WRITE, MAP_SHARED, dax_fd, 0);
+  close(dax_fd);
   if (addr == MAP_FAILED || addr == nullptr) {
-    throw std::runtime_error{"Could not map file: " + file.string() + "; Error: " + std::strerror(errno)};
+    throw std::runtime_error{"!!! DAX DEVICE Could not map file Error: " + std::string(" | ") + std::strerror(errno)};
   }
 
   return static_cast<char*>(addr);
@@ -67,16 +66,17 @@ char* map_dram(const size_t expected_length, const bool use_huge_pages) {
 }
 
 char* create_pmem_file(const std::filesystem::path& file, const size_t length) {
-  const std::filesystem::path base_dir = file.parent_path();
-  if (!std::filesystem::exists(base_dir)) {
-    if (!std::filesystem::create_directories(base_dir)) {
-      throw std::runtime_error{"Could not create dir: " + base_dir.string()};
-    }
-  }
+  // 不需要创建文件 只需要mmap
+  // const std::filesystem::path base_dir = file.parent_path();
+  // if (!std::filesystem::exists(base_dir)) {
+  //   if (!std::filesystem::create_directories(base_dir)) {
+  //     throw std::runtime_error{"Could not create dir: " + base_dir.string()};
+  //   }
+  // }
 
-  std::ofstream temp_stream{file};
-  temp_stream.close();
-  std::filesystem::resize_file(file, length);
+  // std::ofstream temp_stream{file};
+  // temp_stream.close();
+  // std::filesystem::resize_file(file, length);
   return map_pmem(file, length);
 }
 
